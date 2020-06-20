@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.views.generic import TemplateView
 import random
 
+nodeStateData = []
 
 def generate_name(char_count):
     name = ""
@@ -30,8 +31,11 @@ class GenerateNodes(TemplateView):
 
         total_nodes_required = int(request.GET.get('totalNodesRequired', 0))
 
+        global nodeStateData
+        nodeStateData = generate_node_list(total_nodes_required);
+
         response = {
-            "NodeData": generate_node_list(total_nodes_required)
+            "NodeData": nodeStateData,
         }
 
         return JsonResponse(response, status=200)
@@ -47,5 +51,22 @@ class ClearState(TemplateView):
 
 
 def reset():
-    pass
-    # counter = 0
+    global nodeStateData
+    nodeStateData = []
+
+
+class GenerateTopology(TemplateView):
+    def get(self, request, *args, **kwargs):
+        response = {
+            "pathData": generateConnections()
+        }
+        return JsonResponse(response, status=200)
+
+
+def generateConnections():
+    global nodeStateData
+    
+    if len(nodeStateData) == 0:
+        return "First, Create a Set of Nodes. Then Try Again"
+
+    return [{"source":1, "destination":0}]
