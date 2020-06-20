@@ -12,13 +12,13 @@ def generate_name(char_count):
     return name
 
 
-def generate_node_list(total_nodes_required):
+def generate_node_list(total_nodes_required, maxX, maxY):
     node_list = []
     for node in range(total_nodes_required):
         current_node_data = {
             "id": node,
-            "yPos": random.randint(0, 600),
-            "xPos": random.randint(0, 1500),
+            "yPos": random.randint(0, maxY),
+            "xPos": random.randint(0, maxX),
             "text": generate_name(3)
         }
         node_list.append(current_node_data)
@@ -31,9 +31,11 @@ class GenerateNodes(TemplateView):
         global nodeData
 
         total_nodes_required = int(float(request.GET.get('totalNodesRequired', 0)))
+        maxX = int(float(request.GET.get('maxX', 0)))
+        maxY = int(float(request.GET.get('maxY', 0)))
 
         global nodeStateData
-        nodeStateData = generate_node_list(total_nodes_required);
+        nodeStateData = generate_node_list(total_nodes_required, maxX,maxY);
 
         response = {
             "NodeData": nodeStateData,
