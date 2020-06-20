@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 import random
 
 nodeStateData = []
+topologyStateData = []
 
 def generate_name(char_count):
     name = ""
@@ -17,7 +18,7 @@ def generate_node_list(total_nodes_required):
         current_node_data = {
             "id": node,
             "yPos": random.randint(0, 600),
-            "xPos": random.randint(0, 1350),
+            "xPos": random.randint(0, 1500),
             "text": generate_name(3)
         }
         node_list.append(current_node_data)
@@ -29,7 +30,7 @@ class GenerateNodes(TemplateView):
     def get(self, request, *args, **kwargs):
         global nodeData
 
-        total_nodes_required = int(request.GET.get('totalNodesRequired', 0))
+        total_nodes_required = int(float(request.GET.get('totalNodesRequired', 0)))
 
         global nodeStateData
         nodeStateData = generate_node_list(total_nodes_required);
@@ -52,13 +53,17 @@ class ClearState(TemplateView):
 
 def reset():
     global nodeStateData
+    global topologyStateData
     nodeStateData = []
+    topologyStateData = []
 
 
 class GenerateTopology(TemplateView):
     def get(self, request, *args, **kwargs):
+        global topologyStateData
+        topologyStateData = generateConnections()
         response = {
-            "pathData": generateConnections()
+            "pathData": topologyStateData
         }
         return JsonResponse(response, status=200)
 
@@ -69,4 +74,31 @@ def generateConnections():
     if len(nodeStateData) == 0:
         return "First, Create a Set of Nodes. Then Try Again"
 
-    return [{"source":1, "destination":0}]
+    pathData = []
+    
+    unvisitiedNodes = [node for node in range(len(nodeStateData))]
+    visitedNodes = []
+
+    totalNodes = len(unvisitiedNodes)
+    remainingNodes = len(unvisitiedNodes)
+
+    while len(visitedNodes) < totalNodes-1:
+        source = unvisitiedNodes[random.randint(0,remainingNodes-1)]
+
+        #   Select Destination & Jingalala
+        destination = unvisitiedNodes[random.randint(0,remainingNodes-1)]
+
+        while(destination == source):
+            destination = unvisitiedNodes[random.randint(0,remainingNodes-1)]            
+
+        if(random.randint(0,1)):
+            visitedNodes.append(source)
+            unvisitiedNodes.remove(source)
+        else:
+            visitedNodes.append(destination)
+            unvisitiedNodes.remove(destination)
+
+        remainingNodes-=1
+        pathData.append({"source":source, "destination": destination})
+    
+    return pathData
