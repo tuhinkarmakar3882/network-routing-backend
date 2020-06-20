@@ -104,3 +104,27 @@ def generateConnections():
         pathData.append({"source":source, "destination": destination})
     
     return pathData
+
+
+class DiscoverRoute(TemplateView):
+
+    def get(self, request, *args, **kwargs):
+        global nodeData
+
+        sourceId = int(float(request.GET.get('sourceId', 0)))
+        destinationId = int(float(request.GET.get('destinationId', 0)))
+        
+
+        global nodeStateData
+        global topologyStateData
+
+        routeData = discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData)
+
+        response = {
+            "RouteData": routeData,
+        }
+
+        return JsonResponse(response, status=200)
+
+def discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData):
+    return topologyStateData[:3]
