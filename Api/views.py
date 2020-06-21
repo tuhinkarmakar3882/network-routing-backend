@@ -101,7 +101,7 @@ def generateConnections():
             unvisitiedNodes.remove(destination)
 
         remainingNodes-=1
-        pathData.append({"source":source, "destination": destination})
+        pathData.append({"source":source, "destination": destination, "weightData": random.randint(5,50)})
     
     return pathData
 
