@@ -1,6 +1,8 @@
 from django.http import JsonResponse
 from django.views.generic import TemplateView
+from collections import defaultdict
 import random
+from .graphDataStructure import Graph, parseRoutes, generateAdjacencyMatrix
 
 nodeStateData = []
 topologyStateData = []
@@ -127,4 +129,16 @@ class DiscoverRoute(TemplateView):
         return JsonResponse(response, status=200)
 
 def discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData):
-    return topologyStateData[:3]
+    graph = Graph()
+
+    adjacencyMatrix = generateAdjacencyMatrix(nodeStateData, topologyStateData)
+
+    print(adjacencyMatrix)
+    allPaths = graph.discoverRoutes(adjacencyMatrix,sourceId)
+
+    pathTo = parseRoutes(allPaths)
+
+    print("\n\n\n", pathTo, "\n\n\n")
+    print("\n\n\n",destinationId, pathTo[int(destinationId)], "\n\n\n")
+
+    return pathTo[int(destinationId)]
