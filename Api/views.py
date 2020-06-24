@@ -16,13 +16,13 @@ def generateNodeName(char_count):
     return name
 
 
-def generateNodeList(total_nodes_required, max_x, max_y):
+def generateNodeList(totalNodesRequired, xMax, yMax):
     node_list = []
-    for node in range(total_nodes_required):
+    for node in range(totalNodesRequired):
         current_node_data = {
             "id": node,
-            "yPos": random.randint(0, max_y),
-            "xPos": random.randint(0, max_x),
+            "yPos": random.randint(0, yMax),
+            "xPos": random.randint(0, xMax),
             "text": generateNodeName(3)
         }
         node_list.append(current_node_data)
@@ -32,12 +32,12 @@ def generateNodeList(total_nodes_required, max_x, max_y):
 class GenerateNodes(TemplateView):
 
     def get(self, request, *args, **kwargs):
-        total_nodes_required = int(float(request.GET.get('totalNodesRequired', 0)))
-        max_x = int(float(request.GET.get('maxX', 0)))
-        max_y = int(float(request.GET.get('maxY', 0)))
+        totalNodesRequired = int(float(request.GET.get('totalNodesRequired', 0)))
+        xMax = int(float(request.GET.get('maxX', 0)))
+        yMax = int(float(request.GET.get('maxY', 0)))
 
         global nodeStateData
-        nodeStateData = generateNodeList(total_nodes_required, max_x, max_y)
+        nodeStateData = generateNodeList(totalNodesRequired, xMax, yMax)
 
         response = {
             "NodeData": nodeStateData,
@@ -72,7 +72,7 @@ class GenerateTopology(TemplateView):
         return JsonResponse(response, status=200)
 
 
-def generateConnections():
+def generateConnections(iterations=1):
     global nodeStateData
 
     if len(nodeStateData) == 0:
@@ -80,30 +80,33 @@ def generateConnections():
 
     pathData = []
 
-    unvisitiedNodes = [node for node in range(len(nodeStateData))]
-    visitedNodes = []
+    for i in range(iterations):
+        unvisitedNodes = [node for node in range(len(nodeStateData))]
+        visitedNodes = []
 
-    totalNodes = len(unvisitiedNodes)
-    remainingNodes = len(unvisitiedNodes)
+        totalNodes = len(unvisitedNodes)
+        remainingNodes = len(unvisitedNodes)
 
-    while len(visitedNodes) < totalNodes - 1:
-        source = unvisitiedNodes[random.randint(0, remainingNodes - 1)]
+        while len(visitedNodes) < totalNodes - 1:
+            source = unvisitedNodes[random.randint(0, remainingNodes - 1)]
+            destination = unvisitedNodes[random.randint(0, remainingNodes - 1)]
 
-        #   Select Destination & Jingalala
-        destination = unvisitiedNodes[random.randint(0, remainingNodes - 1)]
+            while destination == source:
+                destination = unvisitedNodes[random.randint(0, remainingNodes - 1)]
 
-        while (destination == source):
-            destination = unvisitiedNodes[random.randint(0, remainingNodes - 1)]
+            if random.randint(0, 1):
+                visitedNodes.append(source)
+                unvisitedNodes.remove(source)
+            else:
+                visitedNodes.append(destination)
+                unvisitedNodes.remove(destination)
 
-        if (random.randint(0, 1)):
-            visitedNodes.append(source)
-            unvisitiedNodes.remove(source)
-        else:
-            visitedNodes.append(destination)
-            unvisitiedNodes.remove(destination)
-
-        remainingNodes -= 1
-        pathData.append({"source": source, "destination": destination, "weightData": random.randint(5, 50)})
+            remainingNodes -= 1
+            pathData.append({
+                "source": source,
+                "destination": destination,
+                "weightData": random.randint(5, 50)
+            })
 
     return pathData
 
@@ -111,8 +114,6 @@ def generateConnections():
 class DiscoverRoute(TemplateView):
 
     def get(self, request, *args, **kwargs):
-        global nodeData
-
         sourceId = int(float(request.GET.get('sourceId', 0)))
         destinationId = int(float(request.GET.get('destinationId', 0)))
 
@@ -128,17 +129,17 @@ class DiscoverRoute(TemplateView):
         return JsonResponse(response, status=200)
 
 
-def discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData):
+def discoverRoute(sourceId, destinationId, nodeData, topologyData):
     graph = Graph()
 
-    adjacencyMatrix = generateAdjacencyMatrix(nodeStateData, topologyStateData)
+    adjacencyMatrix = generateAdjacencyMatrix(nodeData, topologyData)
 
-    print(adjacencyMatrix)
+    # print(adjacencyMatrix)
     allPaths = graph.discoverRoutes(adjacencyMatrix, sourceId)
 
     pathTo = parseRoutes(allPaths)
 
-    print("\n\n\n", pathTo, "\n\n\n")
-    print("\n\n\n", destinationId, pathTo[int(destinationId)], "\n\n\n")
+    # print("\n\n\n", pathTo, "\n\n\n")
+    # print("\n\n\n", destinationId, pathTo[int(destinationId)], "\n\n\n")
 
     return pathTo[int(destinationId)]
