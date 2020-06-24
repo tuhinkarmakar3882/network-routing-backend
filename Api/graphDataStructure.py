@@ -47,15 +47,13 @@ class Graph:
                     if dist[u] + graph[u][i] < dist[i]:
                         dist[i] = dist[u] + graph[u][i]
                         parent[i] = u
-        return (self.printSolution(dist, parent))
+        return self.printSolution(dist, parent)
 
 
 def parseRoutes(allPaths):
-    pathTo = defaultdict(dict)
-    pathData = []
+    pathTo = defaultdict(list)
     for path in allPaths:
         pathData = path.split(' ')
-        source_vertex = int(pathData[0])
         destination_vertex = int(pathData[-1])
         routeJson = []
         for node in range(len(pathData) - 1):
