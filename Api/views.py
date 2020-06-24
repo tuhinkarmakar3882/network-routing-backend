@@ -72,7 +72,7 @@ class GenerateTopology(TemplateView):
         return JsonResponse(response, status=200)
 
 
-def generateConnections(iterations=1):
+def generateConnections(iterations=2):
     global nodeStateData
 
     if len(nodeStateData) == 0:
