@@ -64,7 +64,8 @@ def reset():
 
 class GenerateTopology(TemplateView):
     def get(self, request, *args, **kwargs):
-        iterations = request.GET.get('', 1)
+        iterations = request.GET.get('totalIterations', 1)
+        # print(iterations, request.GET['totalIterations'])
         global topologyStateData
         topologyStateData = generateConnections(iterations)
         response = {
@@ -73,7 +74,7 @@ class GenerateTopology(TemplateView):
         return JsonResponse(response, status=200)
 
 
-def generateConnections(iterations=1):
+def generateConnections(iterations):
     global nodeStateData
 
     if len(nodeStateData) == 0:
@@ -81,7 +82,7 @@ def generateConnections(iterations=1):
 
     pathData = []
 
-    for i in range(iterations):
+    for i in range(int(iterations)):
         unvisitedNodes = [node for node in range(len(nodeStateData))]
         visitedNodes = []
 
