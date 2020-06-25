@@ -64,15 +64,16 @@ def reset():
 
 class GenerateTopology(TemplateView):
     def get(self, request, *args, **kwargs):
+        iterations = request.GET.get('', 1)
         global topologyStateData
-        topologyStateData = generateConnections()
+        topologyStateData = generateConnections(iterations)
         response = {
             "pathData": topologyStateData
         }
         return JsonResponse(response, status=200)
 
 
-def generateConnections(iterations=2):
+def generateConnections(iterations=1):
     global nodeStateData
 
     if len(nodeStateData) == 0:
