@@ -32,53 +32,36 @@ def generateNodeList(totalNodesRequired, xMax, yMax):
 class GenerateNodes(TemplateView):
 
     def get(self, request, *args, **kwargs):
-        totalNodesRequired = int(float(request.GET.get('totalNodesRequired', 0)))
-        xMax = int(float(request.GET.get('maxX', 0)))
-        yMax = int(float(request.GET.get('maxY', 0)))
+        try:
+            totalNodesRequired = int(float(request.GET.get('totalNodesRequired', 0)))
+            xMax = int(float(request.GET.get('maxX', 0)))
+            yMax = int(float(request.GET.get('maxY', 0)))
 
-        global nodeStateData
-        nodeStateData = generateNodeList(totalNodesRequired, xMax, yMax)
+            global nodeStateData
+            nodeStateData = generateNodeList(totalNodesRequired, xMax, yMax)
 
-        response = {
-            "NodeData": nodeStateData,
-        }
+            response = {
+                "NodeData": nodeStateData,
+                "message": 'Nodes Generated'
+            }
+            return JsonResponse(response, status=200)
+        except:
+            response = {
+                "message": 'Error!'
+            }
+            return JsonResponse(response, status=404)
 
-        return JsonResponse(response, status=200)
 
-
-class ClearState(TemplateView):
+class TestConnection(TemplateView):
     def get(self, request, *args, **kwargs):
-        reset()
         response = {
-            "message": "Success"
-        }
-        return JsonResponse(response, status=200)
-
-
-def reset():
-    global nodeStateData
-    global topologyStateData
-    nodeStateData = []
-    topologyStateData = []
-
-
-class GenerateTopology(TemplateView):
-    def get(self, request, *args, **kwargs):
-        iterations = request.GET.get('totalIterations', 1)
-        # print(iterations, request.GET['totalIterations'])
-        global topologyStateData
-        topologyStateData = generateConnections(iterations)
-        response = {
-            "pathData": topologyStateData
+            "message": "Ready!"
         }
         return JsonResponse(response, status=200)
 
 
 def generateConnections(iterations):
     global nodeStateData
-
-    if len(nodeStateData) == 0:
-        return "First, Create a Set of Nodes. Then Try Again"
 
     pathData = []
 
@@ -113,22 +96,29 @@ def generateConnections(iterations):
     return pathData
 
 
-class DiscoverRoute(TemplateView):
-
+class GenerateTopology(TemplateView):
     def get(self, request, *args, **kwargs):
-        sourceId = int(float(request.GET.get('sourceId', 0)))
-        destinationId = int(float(request.GET.get('destinationId', 0)))
-
-        global nodeStateData
-        global topologyStateData
-
-        routeData = discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData)
-
-        response = {
-            "RouteData": routeData,
-        }
-
-        return JsonResponse(response, status=200)
+        try:
+            iterations = request.GET.get('totalIterations', 1)
+            # print(iterations, request.GET['totalIterations'])
+            global topologyStateData
+            if len(nodeStateData) != 0:
+                topologyStateData = generateConnections(iterations)
+                response = {
+                    "pathData": topologyStateData,
+                    "message": 'Topology Generated'
+                }
+                return JsonResponse(response, status=200)
+            else:
+                response = {
+                    "message": 'First, Create a Set of Nodes. Then Try Again'
+                }
+                return JsonResponse(response, status=404)
+        except:
+            response = {
+                "message": 'Invalid Request!'
+            }
+            return JsonResponse(response, status=404)
 
 
 def discoverRoute(sourceId, destinationId, nodeData, topologyData):
@@ -145,3 +135,42 @@ def discoverRoute(sourceId, destinationId, nodeData, topologyData):
     # print("\n\n\n", destinationId, pathTo[int(destinationId)], "\n\n\n")
 
     return pathTo[int(destinationId)]
+
+
+class DiscoverRoute(TemplateView):
+
+    def get(self, request, *args, **kwargs):
+        sourceId = int(float(request.GET.get('sourceId', 0)))
+        destinationId = int(float(request.GET.get('destinationId', 0)))
+
+        global nodeStateData
+        global topologyStateData
+        try:
+            routeData = discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData)
+
+            response = {
+                "RouteData": routeData,
+                "message": "Done",
+            }
+            return JsonResponse(response, status=200)
+        except:
+            response = {
+                "message": "Invalid Request!",
+            }
+            return JsonResponse(response, status=404)
+
+
+def reset():
+    global nodeStateData
+    global topologyStateData
+    nodeStateData = []
+    topologyStateData = []
+
+
+class ClearState(TemplateView):
+    def get(self, request, *args, **kwargs):
+        reset()
+        response = {
+            "message": "Success"
+        }
+        return JsonResponse(response, status=200)

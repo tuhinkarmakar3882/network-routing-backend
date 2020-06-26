@@ -14,19 +14,19 @@ class Graph:
     def printPath(self, parent, j, path=""):
         if parent[j] == -1:
             path += ' ' + str(j)
-            print(path, end=" ")
+            # print(path, end=" ")
             return path
         path += ' ' + (self.printPath(parent, parent[j], path))
         path += ' ' + str(j)
-        print(path)
+        # print(path)
         return path
 
     def printSolution(self, dist, parent):
         src = 0
         temp = []
-        print("Vertex \t\tDistance from Source\tPath")
+        # print("Vertex \t\tDistance from Source\tPath")
         for i in range(1, len(dist)):
-            print("\n{} --> {} \t\t{} \t\t".format(src, i, dist[i]), end="")
+            # print("\n{} --> {} \t\t{} \t\t".format(src, i, dist[i]), end="")
             temp.append(self.printPath(parent, i).strip())
         return temp
 
