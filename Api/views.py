@@ -3,10 +3,9 @@ import random
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 
-from .graphDataStructure import Graph, parseRoutes, generateAdjacencyMatrix
-
 nodeStateData = []
 topologyStateData = []
+name_to_id_mapping = {}
 
 
 def generateNodeName(char_count):
@@ -29,6 +28,12 @@ def generateNodeList(totalNodesRequired, xMax, yMax):
     return node_list
 
 
+def createMapping(data):
+    global name_to_id_mapping
+    for i in range(len(data)):
+        name_to_id_mapping[data[i]['text']] = i
+
+
 class GenerateNodes(TemplateView):
 
     def get(self, request, *args, **kwargs):
@@ -39,6 +44,8 @@ class GenerateNodes(TemplateView):
 
             global nodeStateData
             nodeStateData = generateNodeList(totalNodesRequired, xMax, yMax)
+
+            createMapping(nodeStateData)
 
             response = {
                 "NodeData": nodeStateData,
@@ -121,33 +128,134 @@ class GenerateTopology(TemplateView):
             return JsonResponse(response, status=404)
 
 
-def discoverRoute(sourceId, destinationId, nodeData, topologyData):
-    graph = Graph()
+def consumable(route):
+    if len(route) > 1:
+        global name_to_id_mapping
+        routeData = []
 
-    adjacencyMatrix = generateAdjacencyMatrix(nodeData, topologyData)
+        for node in range(len(route) - 1):
+            edge = {
+                "source": name_to_id_mapping[route[node]],
+                "destination": name_to_id_mapping[route[node + 1]],
+                "weightData": 1
+            }
+            routeData.append(edge)
+        return routeData
+    else:
+        return False
+
+
+def discoverRoute(source_name, destination_name, nodeData, maxRange):
+    import time
+    def ReturnCoordinates(D):
+        L = (D[(list(D.keys())[0])])
+        L1 = []
+        for i in range(len(L)):
+            L1.append([L[i]["xPos"], L[i]["yPos"]])
+        return (L1)
+
+    def ReturnNodeNameAccess(D):
+        L = (D[(list(D.keys())[0])])
+        L1 = []
+        for i in range(len(L)):
+            L1.append(L[i]["text"])
+        return (L1)
+
+    D = {"NodeData": nodeData}
+    n = len(nodeData)  # no. of nodes
+    Coord = (ReturnCoordinates(D))
+    Names = (ReturnNodeNameAccess(D))
+    print(Coord)
+    print(Names)
+    S = source_name
+    k = Names.index(S)
+    D = destination_name
+    Route = [S]
+    Dest = str()
+    max_range = int(maxRange)
+    stop_searching = False
+    Discard = []
+    r = 1  # neighbourhood_radius
+    start_time = time.time()
+
+    while Route[len(Route) - 1] != D:
+        k = Names.index(S)
+        Pingn = {}
+        print("r=>", r)
+        print("Currently Prcessing =>", S)
+        for i in range(n):
+            if i != k and Names[i] not in Route and Names[i] not in Discard:
+                dist = ((Coord[k][0] - Coord[i][0]) ** 2 + (Coord[k][1] - Coord[i][
+                    1]) ** 2) ** 0.5  # Distance_of_two_nodes (Euclidean for higher dimensions)
+                if dist <= r:
+                    Pingn[Names[i]] = dist
+                    print(Pingn)
+        if len(Pingn) == 0:
+            if stop_searching and len(Route) == 1:
+                print("No nodes in current range for this source")
+                print("No path exists, taking this node as the source.")
+                break
+            elif len(Route) > 1:
+                S = Route.pop()
+                Discard.append(S)
+                S = Route[len(Route) - 1]
+                print("Route", Route)
+                print("Discard", Discard)
+            else:
+                print("Checking till max range...")
+                r += (max_range - r)
+                if r >= max_range:
+                    stop_searching = True
+        elif D in (list(Pingn.keys())):
+            Route.append(D)
+        else:
+            Mindist = min(list(Pingn.values()))
+            print("Nodes available in ping range of source:", Pingn)
+            print(Mindist)
+            Dest = (list(Pingn.keys())[list(Pingn.values()).index(Mindist)])
+            Route.append(Dest)
+            S = Route[len(Route) - 1]
+    else:
+        print("GreyWolf suggests the route order:", (Route))
+
+    end_time = time.time()
+
+    print("Total Time Taken {} seconds".format(abs(start_time - end_time)))
+    print("Final Route =>", Route)
+    # GreyWolf Begins
+    # MZU -> XOP
+    print("I worked")
+    return consumable(Route)
+
+    # graph = Graph()
+
+    # adjacencyMatrix = generateAdjacencyMatrix(nodeData, topologyData)
 
     # print(adjacencyMatrix)
-    allPaths = graph.discoverRoutes(adjacencyMatrix, sourceId)
+    # allPaths = graph.discoverRoutes(adjacencyMatrix, sourceId)
 
-    pathTo = parseRoutes(allPaths)
+    # pathTo = parseRoutes(allPaths)
 
     # print("\n\n\n", pathTo, "\n\n\n")
     # print("\n\n\n", destinationId, pathTo[int(destinationId)], "\n\n\n")
 
-    return pathTo[int(destinationId)]
+    # return pathTo[int(destinationId)]
 
 
 class DiscoverRoute(TemplateView):
 
     def get(self, request, *args, **kwargs):
-        sourceId = int(float(request.GET.get('sourceId', 0)))
-        destinationId = int(float(request.GET.get('destinationId', 0)))
+        sourceName = str(request.GET.get('sourceId', 0))
+        destinationName = str(request.GET.get('destinationId', 0))
+        maxRange = str(request.GET.get('maxRange', 100))
 
+        print(sourceName, destinationName)
         global nodeStateData
         global topologyStateData
         try:
-            routeData = discoverRoute(sourceId, destinationId, nodeStateData, topologyStateData)
-
+            routeData = discoverRoute(sourceName, destinationName, nodeStateData, maxRange)
+            if not routeData:
+                raise IOError
             response = {
                 "RouteData": routeData,
                 "message": "Done",
@@ -155,7 +263,7 @@ class DiscoverRoute(TemplateView):
             return JsonResponse(response, status=200)
         except:
             response = {
-                "message": "Invalid Request!",
+                "message": "No Route Found!",
             }
             return JsonResponse(response, status=404)
 
