@@ -245,15 +245,19 @@ def discoverRoute(source_name, destination_name, nodeData, maxRange):
 class DiscoverRoute(TemplateView):
 
     def get(self, request, *args, **kwargs):
+        import json
         sourceName = str(request.GET.get('sourceId', 0))
         destinationName = str(request.GET.get('destinationId', 0))
         maxRange = str(request.GET.get('maxRange', 100))
+        nodeData = request.GET.get('nodeData', [])
 
-        print(sourceName, destinationName)
         global nodeStateData
+        print(json.loads(nodeData) == nodeStateData)
+        print(sourceName, destinationName)
+        # global nodeStateData
         global topologyStateData
         try:
-            routeData = discoverRoute(sourceName, destinationName, nodeStateData, maxRange)
+            routeData = discoverRoute(sourceName, destinationName, json.loads(nodeData), maxRange)
             if not routeData:
                 raise IOError
             response = {
