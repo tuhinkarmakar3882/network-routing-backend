@@ -128,11 +128,10 @@ class GenerateTopology(TemplateView):
             return JsonResponse(response, status=404)
 
 
-def consumable(route):
+def consumable(route, time_needed):
     if len(route) > 1:
         global name_to_id_mapping
         routeData = []
-
         for node in range(len(route) - 1):
             edge = {
                 "source": name_to_id_mapping[route[node]],
@@ -140,9 +139,9 @@ def consumable(route):
                 "weightData": 1
             }
             routeData.append(edge)
-        return routeData
+        return (routeData, time_needed)
     else:
-        return False
+        return (False, time_needed)
 
 
 def discoverRoute(source_name, destination_name, nodeData, maxRange):
@@ -219,13 +218,14 @@ def discoverRoute(source_name, destination_name, nodeData, maxRange):
         print("GreyWolf suggests the route order:", (Route))
 
     end_time = time.time()
+    time_needed = abs(start_time - end_time)
 
-    print("Total Time Taken {} seconds".format(abs(start_time - end_time)))
+    print("Total Time Taken {} seconds".format(time_needed))
     print("Final Route =>", Route)
     # GreyWolf Begins
     # MZU -> XOP
     print("I worked")
-    return consumable(Route)
+    return consumable(Route, time_needed)
 
     # graph = Graph()
 
@@ -254,20 +254,23 @@ class DiscoverRoute(TemplateView):
         global nodeStateData
         print(json.loads(nodeData) == nodeStateData)
         print(sourceName, destinationName)
-        # global nodeStateData
+
         global topologyStateData
         try:
-            routeData = discoverRoute(sourceName, destinationName, json.loads(nodeData), maxRange)
+            routeData, time_needed = discoverRoute(sourceName, destinationName, json.loads(nodeData), maxRange)
             if not routeData:
                 raise IOError
             response = {
                 "RouteData": routeData,
                 "message": "Done",
+                "timeTaken": time_needed,
+                "found": True,
             }
             return JsonResponse(response, status=200)
         except:
             response = {
                 "message": "No Route Found!",
+                "found": False,
             }
             return JsonResponse(response, status=404)
 
