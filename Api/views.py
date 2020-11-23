@@ -1,4 +1,5 @@
 import random
+import time
 
 from django.http import JsonResponse
 from django.views.generic import TemplateView
@@ -128,6 +129,23 @@ class GenerateTopology(TemplateView):
             return JsonResponse(response, status=404)
 
 
+"""
+[
+    {
+        "source": Source Node Name,
+        "destination": Dest. Node Name,
+        "weightData": 1
+    },
+    {
+        "source": name_to_id_mapping[route[node]],
+        "destination": name_to_id_mapping[route[node + 1]],
+        "weightData": 1
+    },
+    ...
+]
+"""
+
+
 def consumable(route, time_needed):
     if len(route) > 1:
         global name_to_id_mapping
@@ -139,31 +157,30 @@ def consumable(route, time_needed):
                 "weightData": 1
             }
             routeData.append(edge)
-        return (routeData, time_needed)
+        return routeData, time_needed
     else:
-        return (False, time_needed)
+        return False, time_needed
 
 
-def discoverRoute(source_name, destination_name, nodeData, maxRange):
-    import time
-    def ReturnCoordinates(D):
+def discover_route(source_name, destination_name, nodeData, maxRange):
+    def return_coordinates(D):
         L = (D[(list(D.keys())[0])])
         L1 = []
         for i in range(len(L)):
             L1.append([L[i]["xPos"], L[i]["yPos"]])
         return (L1)
 
-    def ReturnNodeNameAccess(D):
+    def return_node_name_access(D):
         L = (D[(list(D.keys())[0])])
         L1 = []
         for i in range(len(L)):
             L1.append(L[i]["text"])
-        return (L1)
+        return L1
 
     D = {"NodeData": nodeData}
     n = len(nodeData)  # no. of nodes
-    Coord = (ReturnCoordinates(D))
-    Names = (ReturnNodeNameAccess(D))
+    Coord = (return_coordinates(D))
+    Names = (return_node_name_access(D))
     print(Coord)
     print(Names)
     S = source_name
@@ -225,6 +242,7 @@ def discoverRoute(source_name, destination_name, nodeData, maxRange):
     # GreyWolf Begins
     # MZU -> XOP
     print("I worked")
+
     return consumable(Route, time_needed)
 
     # graph = Graph()
@@ -257,7 +275,7 @@ class DiscoverRoute(TemplateView):
 
         global topologyStateData
         try:
-            routeData, time_needed = discoverRoute(sourceName, destinationName, json.loads(nodeData), maxRange)
+            routeData, time_needed = discover_route(sourceName, destinationName, json.loads(nodeData), maxRange)
             if not routeData:
                 raise IOError
             response = {
